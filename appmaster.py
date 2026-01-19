@@ -56,7 +56,7 @@ MODELO_ACTUAL = "gemini-2.5-flash"
 # 🧠 BASE DE DATOS MAESTRA (V31 - GRAND UNIFIED STRATEGY)
 # ==========================================
 DB_CONOCIMIENTO = {
-"✨ RECOMENDACIÓN AUTOMÁTICA": {
+    "✨ RECOMENDACIÓN AUTOMÁTICA": {
         "desc": "La IA decide la mejor estrategia basándose en el contenido.",
         "preguntas": ["Identifica los hallazgos estratégicos más críticos.", "Realiza una evaluación integral de riesgos.", "Genera un Resumen Ejecutivo (BLUF).", "¿Cuáles son las anomalías o patrones ocultos más relevantes?"]
     },
@@ -810,6 +810,7 @@ if 'res' in st.session_state:
     c1.download_button("Descargar Word", crear_word(st.session_state['res'], st.session_state['tecnicas_usadas'], st.session_state['origen_dato']), "Reporte.docx")
     try: c2.download_button("Descargar PDF", bytes(crear_pdf(st.session_state['res'], st.session_state['tecnicas_usadas'], st.session_state['origen_dato'])), "Reporte.pdf")
     except: pass
+
 
 
 
