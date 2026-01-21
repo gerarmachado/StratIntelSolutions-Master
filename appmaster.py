@@ -13,6 +13,7 @@ import os
 import time
 import datetime
 from langchain_community.tools import DuckDuckGoSearchRun
+import graphviz
 
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(page_title="StratIntel (Master)", page_icon="♟️", layout="wide")
@@ -589,6 +590,41 @@ def procesar_youtube(url, api_key):
             return res.text, "Audio IA"
         except Exception as e: return f"Error: {e}", "Error"
 
+def generar_esquema_graphviz(texto_analisis, api_key):
+    """Genera código DOT para visualizar relaciones."""
+    try:
+        genai.configure(api_key=api_key)
+        # Usamos el modelo flash por velocidad
+        model = genai.GenerativeModel("gemini-1.5-flash") 
+        
+        prompt = f"""
+        ACTÚA COMO: Experto en Visualización de Datos de Inteligencia.
+        OBJETIVO: Convertir el siguiente análisis textual en un DIAGRAMA DE RED o MAPA CONCEPTUAL.
+        
+        INSTRUCCIONES TÉCNICAS:
+        1. Analiza el texto e identifica: Actores clave, Acciones/Relaciones y Conceptos.
+        2. Genera EXCLUSIVAMENTE el código en lenguaje DOT (Graphviz).
+        3. NO escribas explicaciones, ni markdown (como ```dot), solo el código crudo.
+        
+        ESTILO DEL GRAFO:
+        - Tipo: digraph G {{ rankdir=LR; node [shape=box, style=filled, color=lightblue, fontname="Arial"]; edge [fontname="Arial", fontsize=10]; }}
+        - Relaciones: "Actor A" -> "Actor B" [label="acción"];
+        
+        TEXTO BASE:
+        {texto_analisis[:15000]}
+        """
+        
+        res = model.generate_content(prompt)
+        # Limpieza brutal para asegurar que solo quede el código DOT
+        codigo_dot = res.text.replace("```dot", "").replace("```", "").replace("DOT", "").strip()
+        
+        # Crear objeto Graphviz
+        grafico = graphviz.Source(codigo_dot)
+        return grafico, None
+        
+    except Exception as e:
+        return None, f"Error visual: {e}"
+
 # --- FUNCIONES DE REPORTE ---
 def limpiar_texto(t):
     if not t: return ""
@@ -800,7 +836,34 @@ else:
                 
                 st.session_state['res'] = informe_final
                 st.session_state['tecnicas_usadas'] = ", ".join(tecnicas_seleccionadas)
-                st.success("✅ Misión Completada")
+                st.success("✅ Informe Generado")
+                st.markdown("---")
+                st.subheader("🎨 Mapa de Inteligencia")
+                # --- MÓDULO VISUAL (NUEVO) ---
+                if st.button("🗺️ Generar Esquema Táctico", type="secondary"):
+                    with st.spinner("Diseñando arquitectura del conflicto..."):
+                    # Llamamos a la función nueva
+                    grafico, error_vis = generar_esquema_graphviz(st.session_state['res'], st.session_state['api_key'])
+                    
+                    if grafico:
+                        # 1. Mostrar en pantalla
+                        st.graphviz_chart(grafico)
+                        
+                        # 2. Botón de Descarga (PNG)
+                        try:
+                            # Renderizamos el gráfico a bytes en formato PNG
+                            png_bytes = grafico.pipe(format='png')
+                            
+                            st.download_button(
+                                label="💾 Descargar Mapa (Imagen PNG)",
+                                data=png_bytes,
+                                file_name="Mapa_StratIntel.png",
+                                mime="image/png"
+                            )
+                        except Exception as e:
+                            st.warning(f"Se visualiza pero no se puede descargar (Falta binario Graphviz en sistema): {e}")
+                    else:
+                        st.error(f"No se pudo generar el mapa: {error_vis}")
                 st.markdown(informe_final)
 
             except Exception as e: st.error(f"Error: {e}")
@@ -811,6 +874,7 @@ if 'res' in st.session_state:
     c1.download_button("Descargar Word", crear_word(st.session_state['res'], st.session_state['tecnicas_usadas'], st.session_state['origen_dato']), "Reporte.docx")
     try: c2.download_button("Descargar PDF", bytes(crear_pdf(st.session_state['res'], st.session_state['tecnicas_usadas'], st.session_state['origen_dato'])), "Reporte.pdf")
     except: pass
+
 
 
 
