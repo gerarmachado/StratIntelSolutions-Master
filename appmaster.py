@@ -915,8 +915,6 @@ if 'res' in st.session_state:
         except Exception as e:
             st.warning("⚠️ Visualización activa. Para descargar, instala 'graphviz' en packages.txt")
 
-    with c_vis2:
-        st.info("🚧 Línea de tiempo: En desarrollo.")
 
 
 
