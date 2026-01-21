@@ -51,7 +51,7 @@ API_KEY_FIJA = ""
 if "GOOGLE_API_KEY" in st.secrets:
     API_KEY_FIJA = st.secrets["GOOGLE_API_KEY"]
 
-MODELO_ACTUAL = "gemini-2.5-flash"  
+MODELO_ACTUAL = "gemini-2.5-pro"  
 
 # ==========================================
 # 🧠 BASE DE DATOS MAESTRA (GRAND UNIFIED STRATEGY)
@@ -914,6 +914,7 @@ if 'res' in st.session_state:
             )
         except Exception as e:
             st.warning("⚠️ Visualización activa. Para descargar, instala 'graphviz' en packages.txt")
+
 
 
 
