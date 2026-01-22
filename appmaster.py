@@ -493,6 +493,15 @@ DB_CONOCIMIENTO = {
             "Mito y Metáfora: ¿Cuál es la historia inconsciente detrás de todo?"
         ]
     },
+    "Michel Godet (Prospectiva Estratégica)": {
+        "desc": "De la anticipación a la acción (El Triángulo Griego: Anticipación, Apropiación, Acción).",
+        "preguntas": [
+            "Preactividad vs Proactividad: ¿Nos estamos preparando para cambios esperados (seguro) o estamos provocando los cambios deseados (apuesta)?",
+            "Análisis Estructural (MICMAC): ¿Cuáles son las variables motrices ocultas que realmente controlan el sistema, más allá de las visibles?",
+            "Juego de Actores (MACTOR): ¿Existen alianzas latentes o conflictos de intereses entre actores que podrían bloquear o facilitar el escenario apuesta?",
+            "Escenarios Futuribles: Diferencia entre el escenario 'tendencial' (si no hacemos nada) y el escenario 'contrastado' (ruptura extrema)."
+        ]
+    },
     "Nassim Taleb (Cisne Negro & Antifragilidad)": {
         "desc": "Gestión de lo improbable y el caos.",
         "preguntas": [
@@ -849,6 +858,7 @@ if 'res' in st.session_state:
     try: c2.download_button("Descargar PDF", bytes(crear_pdf(st.session_state['res'], st.session_state['tecnicas_usadas'], st.session_state['origen_dato'])), "Reporte.pdf")
     except: pass
     
+
 
 
 
