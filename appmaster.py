@@ -521,7 +521,30 @@ DB_CONOCIMIENTO = {
     },
 
     # =========================================================================
-    # 🛠️ BLOQUE 10: HERRAMIENTAS TÁCTICAS (SATs)
+    # 🕵️ BLOQUE 10: VERIFICACIÓN
+    # =========================================================================
+    "--- ANÁLISIS COMPARATIVO ---": { "desc": "", "preguntas": [] },
+
+    "Triangulación de Fuentes (Cross-Check)": {
+        "desc": "Técnica forense para detectar contradicciones, mentiras y vacíos entre múltiples documentos.",
+        "preguntas": [
+            "Matriz de Contradicciones: Genera una tabla comparativa identificando EXCLUSIVAMENTE los puntos donde el 'Documento A' dice algo diferente al 'Documento B' (Fechas, cifras, nombres).",
+            "Análisis de Silencios: ¿Qué información crucial menciona una fuente pero es omitida sospechosamente por las otras?",
+            "Divergencia Narrativa: ¿Cómo cambia el tono o la intención política entre una versión y otra?",
+            "Veredicto de Credibilidad: Basado en la consistencia interna y externa, ¿qué fuente parece tener mayor acceso a la verdad y cuál parece intoxicada?"
+        ]
+    },
+    "Análisis de Decepción y Engaño": {
+        "desc": "Detección de manipulación informativa.",
+        "preguntas": [
+            "Señuelos: ¿Existe información demasiado perfecta o detallada diseñada para atraer nuestra atención lejos de lo importante?",
+            "Canales de Retroalimentación: ¿El adversario nos está diciendo lo que queremos escuchar (Sesgo de confirmación)?",
+            "Inconsistencias Temporales: ¿Hay eventos reportados en una secuencia cronológica imposible?"
+        ]
+    },
+    
+    # =========================================================================
+    # 🛠️ BLOQUE 11: HERRAMIENTAS TÁCTICAS (SATs)
     # =========================================================================
     "--- HERRAMIENTAS ESTRUCTURADAS ---": { "desc": "", "preguntas": [] },
 
@@ -859,6 +882,7 @@ if 'res' in st.session_state:
     try: c2.download_button("Descargar PDF", bytes(crear_pdf(st.session_state['res'], st.session_state['tecnicas_usadas'], st.session_state['origen_dato'])), "Reporte.pdf")
     except: pass
     
+
 
 
 
