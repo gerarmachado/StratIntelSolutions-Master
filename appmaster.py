@@ -838,35 +838,6 @@ else:
                 st.session_state['tecnicas_usadas'] = ", ".join(tecnicas_seleccionadas)
                 st.success("✅ Informe Generado")
                 st.markdown("---")
-                st.subheader("🎨 Visual de Inteligencia")
-                    # --- MÓDULO VISUAL (NUEVO) ---
-                st.markdown("---")
-                st.subheader("🎨 Esquema")
-            
-                if st.button("🗺️ Generar Esquema Táctico", type="secondary"):
-                    with st.spinner("Diseñando arquitectura del conflicto..."):
-                        # Llamamos a la función nueva
-                        grafico, error_vis = generar_esquema_graphviz(st.session_state['res'], st.session_state['api_key'])
-                    
-                        if grafico:
-                            # 1. Mostrar en pantalla
-                            st.graphviz_chart(grafico)
-                        
-                            # 2. Botón de Descarga (PNG)
-                            try:
-                                # Renderizamos el gráfico a bytes en formato PNG
-                                png_bytes = grafico.pipe(format='png')
-                            
-                                st.download_button(
-                                    label="💾 Descargar Mapa (Imagen PNG)",
-                                    data=png_bytes,
-                                    file_name="Mapa_StratIntel.png",
-                                    mime="image/png"
-                                )
-                            except Exception as e:
-                                st.warning(f"Se visualiza pero no se puede descargar (Falta binario Graphviz en sistema): {e}")
-                        else:
-                            st.error(f"No se pudo generar el mapa: {error_vis}")
                 st.markdown(informe_final)
 
             except Exception as e: st.error(f"Error: {e}")
@@ -877,43 +848,7 @@ if 'res' in st.session_state:
     c1.download_button("Descargar Word", crear_word(st.session_state['res'], st.session_state['tecnicas_usadas'], st.session_state['origen_dato']), "Reporte.docx")
     try: c2.download_button("Descargar PDF", bytes(crear_pdf(st.session_state['res'], st.session_state['tecnicas_usadas'], st.session_state['origen_dato'])), "Reporte.pdf")
     except: pass
-    # ==========================================
-    # 🎨 MÓDULO DE VISUALIZACIÓN (PERSISTENTE)
-    # ==========================================
-    st.markdown("---")
-    st.header("🎨 Inteligencia Visual")
     
-    # Inicializar estado del gráfico si no existe para que no se borre al recargar
-    if 'grafico_dot' not in st.session_state:
-        st.session_state['grafico_dot'] = None
-    
-    c_vis1, c_vis2 = st.columns(2)
-    
-    with c_vis1:
-        # Botón para GENERAR (Solo procesa)
-        if st.button("🗺️ Generar Mapa de Actores (Esquema)", type="secondary"):
-            with st.spinner("Diseñando arquitectura del conflicto..."):
-                grafico, error_vis = generar_esquema_graphviz(st.session_state['res'], st.session_state['api_key'])
-                
-                if grafico:
-                    st.session_state['grafico_dot'] = grafico # Guardar en memoria
-                else:
-                    st.error(f"Error visual: {error_vis}")
-
-    # Renderizado FUERA del botón (Para que persista en pantalla)
-    if st.session_state['grafico_dot']:
-        st.graphviz_chart(st.session_state['grafico_dot'])
-        
-        try:
-            img_bytes = st.session_state['grafico_dot'].pipe(format='png')
-            st.download_button(
-                label="💾 Descargar Esquema (PNG)",
-                data=img_bytes,
-                file_name="Mapa_StratIntel.png",
-                mime="image/png"
-            )
-        except Exception as e:
-            st.warning("⚠️ Visualización activa. Para descargar, instala 'graphviz' en packages.txt")
 
 
 
