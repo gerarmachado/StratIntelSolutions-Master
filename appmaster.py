@@ -686,11 +686,7 @@ DB_CONOCIMIENTO = {
 # 📘 TEXTO DEL MANUAL (CONTENIDO ESTÁTICO)
 # ==========================================
 MANUAL_USUARIO = """
-# ==========================================
-# 📘 TEXTO DEL MANUAL (ACTUALIZADO V33)
-# ==========================================
-MANUAL_USUARIO = """
-# 📘 MANUAL INTEGRAL | SISTEMA STRATINTEL (V33)
+# 📘 MANUAL INTEGRAL | SISTEMA STRATINTEL
 
 ## PARTE 1: OPERACIONES TÉCNICAS
 **1. INTRODUCCIÓN**
@@ -1111,6 +1107,7 @@ if 'res' in st.session_state:
     c1.download_button("Descargar Word", crear_word(st.session_state['res'], st.session_state['tecnicas_usadas'], st.session_state['origen_dato']), "Reporte.docx")
     try: c2.download_button("Descargar PDF", bytes(crear_pdf(st.session_state['res'], st.session_state['tecnicas_usadas'], st.session_state['origen_dato'])), "Reporte.pdf")
     except: pass
+
 
 
 
