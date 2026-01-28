@@ -33,7 +33,7 @@ def check_password():
     if st.session_state.get("password_correct", False):
         return True
 
-    st.markdown("## ♟️ StratIntel: Acceso Restringido")
+    st.markdown("## ♟️ StratIntel Solutions: Acceso Restringido")
     st.text_input("Usuario", key="username")
     st.text_input("Contraseña", type="password", on_change=password_entered, key="password")
     
@@ -1107,6 +1107,7 @@ if 'res' in st.session_state:
     c1.download_button("Descargar Word", crear_word(st.session_state['res'], st.session_state['tecnicas_usadas'], st.session_state['origen_dato']), "Reporte.docx")
     try: c2.download_button("Descargar PDF", bytes(crear_pdf(st.session_state['res'], st.session_state['tecnicas_usadas'], st.session_state['origen_dato'])), "Reporte.pdf")
     except: pass
+
 
 
 
