@@ -7,8 +7,6 @@ from fpdf import FPDF
 from io import BytesIO
 import requests
 from bs4 import BeautifulSoup
-from youtube_transcript_api import YouTubeTranscriptApi
-import yt_dlp
 import os
 import time
 import datetime
@@ -819,84 +817,7 @@ def obtener_texto_web(url):
         for script in s(["script", "style"]): script.extract()
         return s.get_text(separator='\n')
     except Exception as e: return f"Error: {e}"
-
-def procesar_youtube(url, api_key):
-    # 1. Extraer ID del video limpiamente
-    if "v=" in url:
-        video_id = url.split("v=")[-1].split("&")[0]
-    elif "youtu.be" in url:
-        video_id = url.split("/")[-1].split("?")[0]
-    else:
-        return "❌ Error: URL de YouTube no válida.", "Error"
-
-    try:
-        # --- ESTRATEGIA A: INTELIGENCIA DE TRANSCRIPCIONES (Evita descarga de audio) ---
-        # Listamos TODAS las transcripciones disponibles (no solo 'es' o 'en')
-        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
-        
-        # Intentamos obtener la mejor posible
-        try:
-            # 1. Buscar manual en español o inglés
-            t = transcript_list.find_transcript(['es', 'en'])
-        except:
-            # 2. Si no hay, buscar CUALQUIERA generada automáticamente
-            try:
-                t = transcript_list.find_generated_transcript(['es', 'en'])
-            except:
-                # 3. Si tampoco, agarrar la primera que exista (ej: ruso, chino)
-                t = next(iter(transcript_list))
-        
-        # TRADUCCIÓN AUTOMÁTICA AL ESPAÑOL (Si no está en español)
-        if t.language_code != 'es':
-            t = t.translate('es')
-            
-        # Convertir a texto plano
-        texto_final = " ".join([i['text'] for i in t.fetch()])
-        return texto_final, "Subtítulos (API)"
-
-    except Exception as e_transcript:
-        # --- ESTRATEGIA B: FUERZA BRUTA (Solo si falla A) ---
-        print(f"Fallo transcripción: {e_transcript}. Iniciando descarga de audio...")
-        
-        # ADVERTENCIA: Si estás en un servidor Cloud (Streamlit/Colab), esto fallará (403).
-        # Si estás en local, puede funcionar.
-        opts = {
-            'format': 'bestaudio/best',
-            'outtmpl': '%(id)s.%(ext)s',
-            'postprocessors': [{'key': 'FFmpegExtractAudio','preferredcodec': 'mp3'}],
-            'quiet': True,
-            'nocheckcertificate': True,
-            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
-        
-        try:
-            with yt_dlp.YoutubeDL(opts) as ydl:
-                info = ydl.extract_info(url, download=True)
-                fname = f"{info['id']}.mp3"
-            
-            # Procesar con Gemini
-            genai.configure(api_key=api_key)
-            myfile = genai.upload_file(fname)
-            
-            while myfile.state.name == "PROCESSING":
-                time.sleep(2)
-                myfile = genai.get_file(myfile.name)
-            
-            model = genai.GenerativeModel("gemini-1.5-flash")
-            res = model.generate_content([myfile, "Transcribe este audio detalladamente."])
-            
-            # Limpieza
-            if os.path.exists(fname): os.remove(fname)
-            myfile.delete()
-            return res.text, "Audio IA (Whisper/Gemini)"
-
-        except Exception as e_dl:
-            # MENSAJE FINAL DE ERROR CONTROLADO
-            return (f"❌ BLOQUEO DE SEGURIDAD YOUTUBE:\n"
-                    f"1. El video no tiene subtítulos (ni manuales ni automáticos).\n"
-                    f"2. YouTube bloqueó la descarga del audio (Error 403).\n"
-                    f"SOLUCIÓN: Usa un video que tenga la opción 'CC' (Subtítulos) activada."), "Error Fatal"
-            
+   
 def generar_esquema_graphviz(texto_analisis, api_key):
     """Genera código DOT para visualizar relaciones."""
     try:
@@ -1002,7 +923,7 @@ st.title("♟️ StratIntel Solutions | División de Análisis")
 st.markdown("**Sistema de Inteligencia Estratégica (DSS)**")
 
 # CARGA
-t1, t2, t3, t4, t5, t_ayuda = st.tabs(["📂 PDFs", "📝 DOCXs", "🌐 Web", "📺 YouTube", "✍️ Manual", "ℹ️ Ayuda"])
+t1, t2, t3, t4, t_ayuda = st.tabs(["📂 PDFs", "📝 DOCXs", "🌐 Web", "✍️ Manual", "ℹ️ Ayuda"])
 with t1:
     f = st.file_uploader("PDFs", type="pdf", accept_multiple_files=True)
     if f and st.button("Procesar PDF"):
@@ -1015,54 +936,6 @@ with t3:
     u = st.text_input("URL"); 
     if st.button("Web"): st.session_state['texto_analisis']=obtener_texto_web(u); st.session_state['origen_dato']=f"Web: {u}"; st.success("OK")
 with t4:
-    st.markdown("### 📺 Inteligencia de Video (YouTube)")
-    col_yt_1, col_yt_2 = st.columns([3, 1])
-    
-    with col_yt_1:
-        y = st.text_input("Enlace del Video de YouTube")
-    
-    with col_yt_2:
-        st.markdown("<br>", unsafe_allow_html=True) # Espacio visual
-        boton_auto = st.button("🔄 Analizar Auto")
-
-    # Variable de estado para controlar si mostramos el fallback manual
-    if 'mostrar_manual_yt' not in st.session_state: st.session_state['mostrar_manual_yt'] = False
-
-    if boton_auto and y:
-        with st.spinner("📡 Interceptando señal de YouTube..."):
-            # Intentamos procesar
-            t, m = procesar_youtube(y, st.session_state['api_key'])
-            
-            # VERIFICACIÓN ESTRICTA DE ERRORES
-            # Si el tipo (m) contiene "Error" o el texto (t) empieza con "❌", ES UN FALLO.
-            if "Error" in m or t.startswith("❌"):
-                st.error(t) # Mostramos el error visualmente
-                st.warning("⚠️ PROTCOLO DE CONTINGENCIA ACTIVADO: YouTube bloqueó la IP del servidor.")
-                st.session_state['mostrar_manual_yt'] = True # Activamos modo manual
-            else:
-                # ÉXITO: Guardamos el texto limpio
-                st.session_state['texto_analisis'] = t
-                st.session_state['origen_dato'] = f"YouTube Intel: {y}"
-                st.session_state['mostrar_manual_yt'] = False
-                st.success(f"✅ Transcripción extraída ({len(t)} caracteres)")
-
-    # --- ZONA DE FALLBACK (SI FALLA LA AUTOMATIZACIÓN) ---
-    if st.session_state['mostrar_manual_yt']:
-        st.markdown("---")
-        st.subheader("📝 Ingreso Manual de Transcripción")
-        st.info("💡 **Cómo obtenerla en 10 segundos:** Ve al video en YouTube > Clic en '...más' (descripción) > 'Mostrar transcripción' > Copia todo el texto y pégalo abajo.")
-        
-        texto_manual_yt = st.text_area("Pegar Transcripción Aquí:", height=300)
-        
-        if st.button("💾 Cargar Transcripción Manual"):
-            if len(texto_manual_yt) > 50:
-                st.session_state['texto_analisis'] = texto_manual_yt
-                st.session_state['origen_dato'] = f"YouTube (Manual): {y}"
-                st.success("✅ Datos cargados correctamente. Ve a 'Ejecutar Misión'.")
-                st.session_state['mostrar_manual_yt'] = False # Ocultamos para limpiar
-            else:
-                st.warning("⚠️ El texto es muy corto.")
-with t5:
     m = st.text_area("Manual")
     if st.button("Fijar"): st.session_state['texto_analisis']=m; st.session_state['origen_dato']="Manual"; st.success("OK")
 
@@ -1223,6 +1096,7 @@ if 'res' in st.session_state:
     c1.download_button("Descargar Word", crear_word(st.session_state['res'], st.session_state['tecnicas_usadas'], st.session_state['origen_dato']), "Reporte.docx")
     try: c2.download_button("Descargar PDF", bytes(crear_pdf(st.session_state['res'], st.session_state['tecnicas_usadas'], st.session_state['origen_dato'])), "Reporte.pdf")
     except: pass
+
 
 
 
