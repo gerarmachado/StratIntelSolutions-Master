@@ -957,7 +957,9 @@ st.markdown("---")
 if st.session_state['texto_analisis']:
     with st.expander(f"Fuente Activa: {st.session_state['origen_dato']}"): st.write(st.session_state['texto_analisis'][:1000])
 
-# EJECUCIÓN
+# ==========================================
+# 🚀 EJECUCIÓN DE MISIÓN
+# ==========================================
 st.header("Generación de Informe")
 
 if not st.session_state['api_key'] or not st.session_state['texto_analisis']:
@@ -967,7 +969,7 @@ else:
     with c1:
         if not tecnicas_seleccionadas: st.info("👈 Selecciona técnicas.")
         
-        # --- SELECTOR DE PROFUNDIDAD CON MODO OPERACIONAL ---
+        # --- SELECTOR DE PROFUNDIDAD ---
         profundidad = st.radio(
             "Nivel de Profundidad:", 
             ["🔍 Estratégico (Resumen)", "🎯 Táctico (Todas las preguntas)", "⚙️ Operacional (Selección Específica)"],
@@ -979,7 +981,6 @@ else:
         if "Operacional" in profundidad and tecnicas_seleccionadas:
             st.info("👇 Selecciona los vectores de análisis:")
             for tec in tecnicas_seleccionadas:
-                # Obtenemos las preguntas de TU base de datos exacta
                 qs = DB_CONOCIMIENTO.get(tec, {}).get("preguntas", [])
                 if qs:
                     sel = st.multiselect(f"Preguntas para {tec}:", qs)
@@ -991,12 +992,17 @@ else:
         pir = st.text_area("PIR (Opcional):", height=100)
 
     with c2:
+        # BOTÓN PRINCIPAL
         if st.button("🚀 EJECUTAR MISIÓN", type="primary", use_container_width=True, disabled=len(tecnicas_seleccionadas)==0):
             try:
+                # 1. LIMPIEZA DE MEMORIA (Para evitar duplicados o gráficos viejos)
                 if 'codigo_dot_mapa' in st.session_state: del st.session_state['codigo_dot_mapa']
+                if 'res' in st.session_state: del st.session_state['res']
 
+                # 2. CONFIGURACIÓN
                 genai.configure(api_key=st.session_state['api_key'])
-                model = genai.GenerativeModel(MODELO_ACTUAL)
+                # CORRECCIÓN MODELO: Usamos 2.5-flash para mejor razonamiento o flash para velocidad
+                model = genai.GenerativeModel("gemini-2.5-flash") 
                 ctx = st.session_state['texto_analisis']
 
                 INSTRUCCIONES_ESTILO = """
@@ -1008,7 +1014,7 @@ else:
                 5. META: Generar el mayor volumen de texto útil posible.
                 """
                                 
-                # BÚSQUEDA WEB
+                # 3. BÚSQUEDA WEB
                 contexto_web = ""
                 if usar_internet:
                     with st.status("🌐 Buscando...", expanded=True) as s:
@@ -1017,14 +1023,11 @@ else:
                         contexto_web = f"\nINFO WEB:\n{res_web}\n"
                         s.update(label="✅ Hecho", state="complete", expanded=False)
                 
-                # BUCLE DE ANÁLISIS
-                informe_final += f"\n\n## 📌 {tec}\n{res.text}\n\n---\n"
-                progreso.progress((i + 1) / len(tecnicas_seleccionadas))
-                time.sleep(1)
-                
-                informe_final = f"# INFORME\nFECHA: {datetime.datetime.now().strftime('%d/%m/%Y')}\nFUENTE: {st.session_state['origen_dato']}\n\n"
+                # 4. INICIALIZACIÓN DEL INFORME (CORREGIDO: Antes del bucle)
+                informe_final = f"# INFORME DE INTELIGENCIA\nFECHA: {datetime.datetime.now().strftime('%d/%m/%Y')}\nFUENTE: {st.session_state['origen_dato']}\n\n"
                 progreso = st.progress(0)
                                 
+                # 5. BUCLE DE ANÁLISIS
                 for i, tec in enumerate(tecnicas_seleccionadas):
                     st.caption(f"Analizando: {tec}...")
                     
@@ -1071,6 +1074,7 @@ else:
                     exito = False
                     while intentos < 3 and not exito:
                         try:
+                            # CORRECCIÓN DE MODELO A 2.5
                             config_generacion = genai.types.GenerationConfig(temperature=temp, max_output_tokens=8192)
                             
                             res = model.generate_content(prompt, generation_config=config_generacion)
@@ -1082,70 +1086,22 @@ else:
                                 time.sleep(30)
                                 intentos += 1
                             else:
-                                st.error(f"Error: {e}")
+                                st.error(f"Error en {tec}: {e}")
                                 break
 
                     progreso.progress((i + 1) / len(tecnicas_seleccionadas))
-                    time.sleep(5) 
+                    time.sleep(1) 
 
+                # 6. GUARDADO EN MEMORIA (CORREGIDO: No imprimimos nada aquí, solo guardamos)
                 st.session_state['res'] = informe_final
                 st.session_state['tecnicas_usadas'] = ", ".join(tecnicas_seleccionadas)
-                st.success("✅ Informe Generado")
-                
-                # =========================================================
-                # 🕸️ MÓDULO DE VISUALIZACIÓN + DESCARGAS
-                # (Pegar esto justo debajo de 'st.markdown(informe_final)')
-                # =========================================================
-                st.markdown("---")
-                st.subheader("🕸️ Mapa de Relaciones (Visualización)")
-                
-                with st.spinner("🛰️ Trazando red de actores y conflictos..."):
-                    # Generamos el objeto grafo
-                    grafo, error_visual = generar_esquema_graphviz(informe_final, st.session_state['api_key'])
-                    
-                    if grafo:
-                        # 1. MOSTRAR EN PANTALLA
-                        st.graphviz_chart(grafo, use_container_width=True)
-                        st.caption("Gráfico generado automáticamente (IA).")
-                        
-                        # 2. SECCIÓN DE DESCARGA
-                        st.markdown("### 📥 Exportar Mapa")
-                        col_d1, col_d2 = st.columns(2)
-                        
-                        try:
-                            # Intentamos convertir el grafo a PNG (Requiere Graphviz instalado en el sistema)
-                            img_png = grafo.pipe(format='png')
-                            
-                            with col_d1:
-                                st.download_button(
-                                    label="💾 Descargar Imagen (PNG)",
-                                    data=img_png,
-                                    file_name="mapa_inteligencia.png",
-                                    mime="image/png",
-                                    use_container_width=True
-                                )
-                                
-                            # Intentamos convertir a PDF
-                            pdf_bytes = grafo.pipe(format='pdf')
-                            with col_d2:
-                                st.download_button(
-                                    label="📄 Descargar Vectorial (PDF)",
-                                    data=pdf_bytes,
-                                    file_name="mapa_inteligencia.pdf",
-                                    mime="application/pdf",
-                                    use_container_width=True
-                                )
-                        except Exception as e:
-                            st.warning("⚠️ El mapa se ve, pero no se puede descargar.")
-                            st.error(f"Razón técnica: Falta el ejecutable de Graphviz en el servidor/PC. Error: {e}")
-                            
-                    elif error_visual:
-                        st.warning(f"⚠️ No se pudo generar la visualización. Detalle: {error_visual}")
+                st.success("✅ Informe Generado. Procesando visualización...")
+                st.rerun() # FORZAMOS RECARGA PARA QUE EL BLOQUE PERSISTENTE TOME EL CONTROL
 
-            except Exception as e: st.error(f"Error: {e}")
+            except Exception as e: st.error(f"Error Fatal: {e}")
 
 # ==========================================================
-# 🏁 BLOQUE PERSISTENTE (Se mantiene tras descargar)
+# 🏁 BLOQUE PERSISTENTE (VISUALIZACIÓN Y DESCARGAS)
 # ==========================================================
 if 'res' in st.session_state and st.session_state['res']:
     
@@ -1158,50 +1114,43 @@ if 'res' in st.session_state and st.session_state['res']:
         st.markdown("---")
         st.subheader("🕸️ Mapa de Relaciones (Visualización)")
         with st.spinner("🛰️ Trazando red de actores y conflictos..."):
-            # Llamamos a la API
+            # Llamamos a la función de grafo (Asegúrate de que la función use el modelo correcto internamente)
             grafo, error = generar_esquema_graphviz(st.session_state['res'], st.session_state['api_key'])
             if grafo:
-                # GUARDAMOS EL CÓDIGO FUENTE EN MEMORIA
                 st.session_state['codigo_dot_mapa'] = grafo.source 
+                st.rerun() # Recargamos para mostrar el gráfico ya guardado
             elif error:
                 st.error(f"Error generando mapa: {error}")
 
     # 3. VISUALIZACIÓN Y DESCARGA (Usando la memoria)
     if 'codigo_dot_mapa' in st.session_state:
         try:
-            # Reconstruimos el gráfico desde la memoria (sin llamar a la IA de nuevo)
+            # Reconstruimos el gráfico desde la memoria
             grafo_final = graphviz.Source(st.session_state['codigo_dot_mapa'])
             
             st.markdown("---")
             st.subheader("🕸️ Mapa de Relaciones")
             st.graphviz_chart(grafo_final, use_container_width=True)
             
-            # --- ZONA DE DESCARGA (Ahora sí funciona) ---
+            # --- ZONA DE DESCARGA ---
             st.markdown("### 📥 Exportar Mapa")
             c_d1, c_d2 = st.columns(2)
             
             # Renderizar a bytes
-            img_png = grafo_final.pipe(format='png')
-            pdf_bytes = grafo_final.pipe(format='pdf')
-            
-            with c_d1:
-                st.download_button(
-                    label="💾 Descargar PNG",
-                    data=img_png,
-                    file_name="stratintel_map.png",
-                    mime="image/png",
-                    use_container_width=True
-                )
-            with c_d2:
-                st.download_button(
-                    label="📄 Descargar PDF",
-                    data=pdf_bytes,
-                    file_name="stratintel_map.pdf",
-                    mime="application/pdf",
-                    use_container_width=True
-                )
+            try:
+                img_png = grafo_final.pipe(format='png')
+                with c_d1:
+                    st.download_button("💾 Descargar PNG", img_png, "stratintel_map.png", "image/png", use_container_width=True)
+            except: c_d1.warning("⚠️ Instala Graphviz para PNG")
+
+            try:
+                pdf_bytes = grafo_final.pipe(format='pdf')
+                with c_d2:
+                    st.download_button("📄 Descargar PDF", pdf_bytes, "stratintel_map.pdf", "application/pdf", use_container_width=True)
+            except: pass
+
         except Exception as e:
-            st.warning("⚠️ Mapa visible pero no descargable (Falta Graphviz en el sistema).")
+            st.warning(f"Error visual: {e}")
 
     # 4. BOTONES DEL INFORME DE TEXTO
     st.markdown("---")
@@ -1211,5 +1160,3 @@ if 'res' in st.session_state and st.session_state['res']:
     try: 
         c2.download_button("Descargar PDF", bytes(crear_pdf(st.session_state['res'], st.session_state.get('tecnicas_usadas','Varios'), st.session_state['origen_dato'])), "Reporte.pdf", use_container_width=True)
     except: pass
-
-
