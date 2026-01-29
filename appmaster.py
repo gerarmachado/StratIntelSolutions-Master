@@ -591,16 +591,23 @@ DB_CONOCIMIENTO = {
             "Movilización del Odio: ¿Se está dirigiendo la agresividad colectiva hacia un enemigo común fabricado?"
         ]
     },
-    "Joseph Goebbels (Los 11 Principios de la Propaganda)": {
-        "desc": "Tácticas de manipulación de masas.",
+    "Joseph Goebbels (Matriz de Propaganda Completa)": {
+        "desc": "Auditoría forense de los 11 principios de manipulación de masas.",
         "preguntas": [
-            "Principio de Simplificación: ¿Se ha reducido todo el problema a un único eslogan o enemigo?",
-            "Principio de Orquestación: ¿Se repite la misma mentira incansablemente desde diferentes ángulos hasta que parece verdad?",
-            "Principio de Transfusión: ¿Se están explotando odios o prejuicios preexistentes en la cultura para atacar al rival?",
-            "Principio de la Unanimidad: ¿Se crea la falsa impresión de que 'todo el mundo' piensa así?"
+            "1. Principio de Simplificación y Enemigo Único: ¿Se reduce toda la complejidad del problema a un solo símbolo, eslogan o enemigo a batir?",
+            "2. Principio del Método de Contagio: ¿Se reúnen diversos adversarios (que no tienen nada que ver entre sí) bajo una sola categoría o etiqueta negativa para demonizarlos en bloque?",
+            "3. Principio de la Transposición: ¿Carga el emisor sus propios errores o defectos sobre el adversario? ('Acusa al otro de lo que tú haces').",
+            "4. Principio de la Exageración y Desfiguración: ¿Se convierte un hecho anecdótico, pequeño o aislado en una amenaza grave o crisis sistémica?",
+            "5. Principio de la Vulgarización: ¿El mensaje está adaptado deliberadamente al nivel menos inteligente de la audiencia, evitando argumentos racionales complejos?",
+            "6. Principio de Orquestación: ¿Se limitan a pocas ideas básicas pero las repiten incansablemente desde diferentes ángulos o perspectivas?",
+            "7. Principio de Renovación: ¿Se emiten nuevas acusaciones o informaciones tan rápido que, cuando el adversario responde, el público ya está interesado en otra cosa?",
+            "8. Principio de la Verosimilitud: ¿Se construyen argumentos basándose en fuentes parciales, fragmentos de verdad o 'globos sonda' para dar credibilidad a una mentira mayor?",
+            "9. Principio de la Silenciación: ¿Se omiten o acallan sistemáticamente las noticias que favorecen al rival o las que contradicen la narrativa oficial?",
+            "10. Principio de la Transfusión: ¿Se opera sobre un sustrato de odio, prejuicio, mitología o tradición preexistente en la cultura para potenciar el mensaje?",
+            "11. Principio de la Unanimidad: ¿Se crea la falsa impresión de que 'todo el mundo' piensa así y que el disidente está socialmente aislado?"
         ]
     },
-    
+        
     # =========================================================================
     # 🔮 BLOQUE 9: PROSPECTIVA Y COMPLEJIDAD
     # =========================================================================
@@ -1120,6 +1127,7 @@ if 'res' in st.session_state:
     c1.download_button("Descargar Word", crear_word(st.session_state['res'], st.session_state['tecnicas_usadas'], st.session_state['origen_dato']), "Reporte.docx")
     try: c2.download_button("Descargar PDF", bytes(crear_pdf(st.session_state['res'], st.session_state['tecnicas_usadas'], st.session_state['origen_dato'])), "Reporte.pdf")
     except: pass
+
 
 
 
