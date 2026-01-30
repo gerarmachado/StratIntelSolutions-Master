@@ -819,7 +819,7 @@ def obtener_texto_web(url):
     except Exception as e: return f"Error: {e}"
    
 def generar_esquema_graphviz(texto_analisis, api_key):
-    """Genera código DOT para visualizar relaciones."""
+    """Genera código DOT con código de colores semántico."""
     try:
         genai.configure(api_key=api_key)
         # Usamos el modelo flash por velocidad
@@ -827,26 +827,35 @@ def generar_esquema_graphviz(texto_analisis, api_key):
         
         prompt = f"""
         ACTÚA COMO: Experto en Visualización de Datos de Inteligencia.
-        OBJETIVO: Convertir el siguiente análisis textual en un DIAGRAMA DE RED o MAPA CONCEPTUAL.
+        OBJETIVO: Generar un GRAFO (DOT Graphviz) donde los colores representen la naturaleza del nodo.
+
+        REGLAS DE COLOR OBLIGATORIAS:
+        1. 🟧 ACTORES (Países, Líderes, Organizaciones): fillcolor="#ffcc99" (Naranja)
+        2. 🟥 AMENAZAS (Conflictos, Riesgos, Crisis, Ataques): fillcolor="#ffcccc" (Rojo Claro)
+        3. 🟦 CONCEPTOS (Teorías, Doctrinas, Economía, Recursos): fillcolor="#ccddff" (Azul Claro)
         
         INSTRUCCIONES TÉCNICAS:
-        1. Analiza el texto e identifica: Actores clave, Acciones/Relaciones y Conceptos.
-        2. Genera EXCLUSIVAMENTE el código en lenguaje DOT (Graphviz).
-        3. NO escribas explicaciones, ni markdown (como ```dot), solo el código crudo.
+        1. Analiza el texto y clasifica cada entidad.
+        2. Genera SOLO el código DOT válido. Sin markdown, sin ```.
+        3. Usa nodos con estilo 'filled'.
         
-        ESTILO DEL GRAFO:
-        - Tipo: digraph G {{ rankdir=LR; node [shape=box, style=filled, color=lightblue, fontname="Arial"]; edge [fontname="Arial", fontsize=10]; }}
-        - Relaciones: "Actor A" -> "Actor B" [label="acción"];
+        EJEMPLO DE ESTRUCTURA:
+        digraph G {{
+            rankdir=LR;
+            node [style=filled, fontname="Arial", shape=box];
+            "EEUU" [fillcolor="#ffcc99", label="Actor: EEUU"];
+            "Guerra Híbrida" [fillcolor="#ffcccc", label="Amenaza: Guerra Híbrida"];
+            "EEUU" -> "Guerra Híbrida" [label="enfrenta"];
+        }}
         
-        TEXTO BASE:
+        TEXTO A ANALIZAR:
         {texto_analisis[:15000]}
         """
         
         res = model.generate_content(prompt)
-        # Limpieza brutal para asegurar que solo quede el código DOT
+        # Limpieza estricta para evitar errores de sintaxis
         codigo_dot = res.text.replace("```dot", "").replace("```", "").replace("DOT", "").strip()
         
-        # Crear objeto Graphviz
         grafico = graphviz.Source(codigo_dot)
         return grafico, None
         
@@ -1163,6 +1172,7 @@ if 'res' in st.session_state and st.session_state['res']:
     try: 
         c2.download_button("Descargar PDF", bytes(crear_pdf(st.session_state['res'], st.session_state.get('tecnicas_usadas','Varios'), st.session_state['origen_dato'])), "Reporte.pdf", use_container_width=True)
     except: pass
+
 
 
 
